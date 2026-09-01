@@ -7,14 +7,12 @@ public class Menu {
 	private final Scanner scan;
 	private TemplateManager templateMana;
 	private ProjectBuilder projectBuild;
-//	private Deployer deployer;
 
 	// コンストラクタ
 	Menu() {
 		this.scan = new Scanner(System.in);
 		this.templateMana = new TemplateManager();
 		this.projectBuild = new ProjectBuilder();
-		// this.deployer = new Deployer();
 	}
 
 	// メソッド
@@ -69,20 +67,17 @@ public class Menu {
 	public void execute() {
 		System.out.println(">> プロジェクト構築（実行）を開始します");
 
-		// 登録済みテンプレートの確認
 		List<Template> templates = templateMana.loadAll();
 		if (templates.isEmpty()) {
 			System.out.println("登録されているテンプレートがありません。「2: 登録」から作成してください");
 			return;
 		}
 
-		// テンプレートの選択
 		Template selectedTemplate = selectTemplate();
 		if (selectedTemplate == null) {
 			return;
 		}
 
-		// プロジェクト名の入力
 		System.out.print("プロジェクト名（フォルダ名）を入力してください→ ");
 		String projectName = scan.nextLine();
 		if (projectName.trim().isEmpty()) {
@@ -90,12 +85,10 @@ public class Menu {
 			return;
 		}
 
-		// 作成先のパスの入力
 		System.out.println("作成先の絶対パスを入力してください。");
 		System.out.print("（何も入力せずにEnterを押すと「デスクトップ」に作成されます）→ ");
 		String targetPath = scan.nextLine();
 
-		// リモートリポジトリURLの入力
 		System.out.println("GitHubのリポジトリのURL/SSHを入力してください（例: git@github.com:username/repo.git）");
 		System.out.print("（後で手動設定する場合はそのままEnter）→ ");
 		String remoteUrl = scan.nextLine();
@@ -104,10 +97,17 @@ public class Menu {
 	}
 
 	public void create() {
-		System.out.println("\n>> テンプレート新規登録を開始します");
+		System.out.println(">> テンプレート新規登録を開始します");
 
 		System.out.print("テンプレート名（例: Django標準テンプレート）→ ");
 		String title = scan.nextLine();
+
+		// デフォルトテンプレート生成する？
+		System.out.print("「Djangoテンプレート(render用)」のデフォルトテンプレートを自動生成しますか？ (y/N)→ ");
+		if (scan.nextLine().equals("y")) {
+			createDefaultTemplate(title);
+			return;
+		}
 
 		System.out.print("フレームワーク（例: django, flask）→ ");
 		String framework = scan.nextLine();
@@ -119,38 +119,21 @@ public class Menu {
 		System.out.println("（例: python3 -m venv venv / venv/bin/pip install django など(＊入力なしEnterで終了)）");
 		while (true) {
 			System.out.print("コマンド → ");
-			String cmd = scan.nextLine();
-			if (cmd.trim().isEmpty()) {
+			String command = scan.nextLine();
+			if (command.trim().isEmpty()) {
 				break;
 			}
-			template.getSetupCommand().add(cmd);
+			template.getSetupCommand().add(command);
 		}
+
+		// 独自設定ファイル登録
+		System.out.print("独自設定ファイル（render.yamlや.envなど）を登録しますか？ (y/N)→ ");
+		collectBlueprints(template);
 
 		// 置き換え文字の取得
-		System.out.print("既存ファイルの書き換えルールの確認・更新をしますか？ (y/N): ");
+		System.out.print("既存ファイルの書き換えルールを登録しますか？ (y/N)→ ");
 		collectModifiers(template);
 
-		// デプロイ設定（DeployConfig）
-		System.out.println("デプロイ設定を入力してください。");
-		System.out.print("プラットフォーム（render / vercel / none）→ ");
-		String target = scan.nextLine();
-
-		if (target.equals("none") || target.trim().isEmpty()) {
-			template.setDeployConfig(new DeployConfig("none", "", ""));
-		} else {
-			System.out.print("ビルドコマンド（例: pip install -r requirements.txt）→ ");
-			String buildCommand = scan.nextLine();
-
-			System.out.print("起動コマンド（例: gunicorn app.wsgi:application）→ ");
-			String startCommand = scan.nextLine();
-
-			DeployConfig deployConfig = new DeployConfig(target, buildCommand, startCommand);
-			template.setDeployConfig(deployConfig);
-		}
-
-		System.out.println("*ファイル設計図（Blueprint）の登録は、更新機能から行ってください");
-
-		// 保存
 		templateMana.save(template);
 		System.out.println("テンプレート「" + title + "」の登録・JSONへ保存完了");
 	}
@@ -184,33 +167,34 @@ public class Menu {
 
 		System.out.println("※変更しない項目は、何も入力せずにそのままEnterを押してください。");
 
-		// タイトルの更新
 		System.out.print("新しいタイトル [" + template.getTitle() + "]→ ");
 		String newTitle = scan.nextLine();
 		if (!newTitle.trim().isEmpty()) {
 			template.setTitle(newTitle);
 		}
 
-		// フレームワークの更新
 		System.out.print("新しいフレームワーク [" + template.getFramework() + "]→ ");
 		String newFramework = scan.nextLine();
 		if (!newFramework.trim().isEmpty()) {
 			template.setFramework(newFramework);
 		}
 
-		// コマンドの更新
 		System.out.print("セットアップコマンドを再登録しますか？ (y/N)→ ");
 		if (scan.nextLine().equals("y")) {
 			updateSetupCommands(template);
 		}
 
-		// modifierの更新
-		System.out.print("ファイル内容書き換えルールを再登録しますか？ (y/N)→ ");
+		// ★ Blueprintの部分更新サブメニューへの分岐
+		System.out.print("独自設定ファイル(Blueprint)を確認・更新しますか？ (y/N)→ ");
+		if (scan.nextLine().equals("y")) {
+			updateBlueprints(template);
+		}
+
+		System.out.print("ファイル内容書き換えルールを確認・更新しますか？ (y/N)→ ");
 		if (scan.nextLine().equals("y")) {
 			updateModifiers(template);
 		}
 
-		// 変更の保存
 		templateMana.save(template);
 		System.out.println("テンプレートの更新が完了しました。");
 	}
@@ -224,16 +208,13 @@ public class Menu {
 		}
 
 		System.out.print("本当に「" + template.getTitle() + "」を削除してもよろしいですか？ (y/N): ");
-		String confirm = scan.nextLine();
-
-		if (confirm.equalsIgnoreCase("y")) {
+		if (scan.nextLine().equals("y")) {
 			templateMana.delete(template.getId());
 		} else {
 			System.out.println("削除をキャンセルしました。");
 		}
 	}
 
-	// テンプレート一覧表示して、インデックスで選択させる
 	private Template selectTemplate() {
 		List<Template> templates = templateMana.loadAll();
 
@@ -270,7 +251,109 @@ public class Menu {
 		}
 	}
 
-	// Modifierの入力
+	// 独自設定ファイルの新規登録メソッド
+	private void collectBlueprints(Template template) {
+		if (scan.nextLine().equals("y")) {
+			template.getBlueprintList().clear();
+
+			System.out.println("独自設定ファイルを順番に入力してください。（未入力Enterで終了）");
+			while (true) {
+				System.out.print("ファイルのパス（例: .env, render.yaml）: ");
+				String path = scan.nextLine();
+				if (path.trim().isEmpty()) {
+					break;
+				}
+
+				System.out.println("ファイルの中身を入力してください");
+				System.out.print("（※改行を入れる場合は \\n と入力してください）: ");
+				String content = scan.nextLine();
+				content = content.replace("\\n", "\n");
+
+				System.out.print("このファイルは機密情報を含みますか？（yにすると.gitignoreに登録） (y/N): ");
+				boolean isSecret = scan.nextLine().equals("y");
+
+				template.getBlueprintList().add(new Blueprint(path, content, isSecret));
+
+				System.out.print("さらにファイルを追加しますか？ (y/N): ");
+				if (!(scan.nextLine().equals("y"))) {
+					break;
+				}
+			}
+		}
+	}
+
+	// 独自設定ファイルの部分更新メソッド
+	private void updateBlueprints(Template template) {
+		List<Blueprint> blueprints = template.getBlueprintList();
+
+		while (true) {
+			System.out.println("【現在の独自設定ファイル(Blueprint)一覧】");
+			if (blueprints.isEmpty()) {
+				System.out.println("（登録されているファイルはありません）");
+			} else {
+				for (int i = 0; i < blueprints.size(); i++) {
+					Blueprint bp = blueprints.get(i);
+					System.out.println((i + 1) + ": " + bp.getPath() + (bp.getIsSecret() ? " [機密]" : ""));
+				}
+			}
+
+			System.out.print("操作を選択 (1〜" + blueprints.size() + "の番号: 修正, 0: 新規追加, -1: 終了): ");
+			String input = scan.nextLine();
+
+			try {
+				int choice = Integer.parseInt(input);
+
+				if (choice == -1) {
+					break;
+				} else if (choice == 0) {
+					System.out.print("ファイルのパス: ");
+					String path = scan.nextLine();
+					if (path.trim().isEmpty())
+						continue;
+
+					System.out.print("ファイルの中身 (改行は \\n): ");
+					String content = scan.nextLine();
+					content = content.replace("\\n", "\n");
+
+					System.out.print("機密情報を含みますか？ (y/N): ");
+					String secretInput = scan.nextLine();
+					boolean isSecret = scan.nextLine().equals("y");
+
+					blueprints.add(new Blueprint(path, content, isSecret));
+					System.out.println("-> ファイルを新規追加しました。");
+
+				} else if (choice > 0 && choice <= blueprints.size()) {
+					Blueprint bp = blueprints.get(choice - 1);
+					System.out.println("※変更しない項目は何も入力せずにEnter");
+
+					System.out.print("新しいパス [" + bp.getPath() + "]: ");
+					String newPath = scan.nextLine();
+					if (!newPath.trim().isEmpty()) {
+						bp.setPath(newPath);
+					}
+
+					System.out.print("新しい中身 (改行は \\n): ");
+					String newContent = scan.nextLine();
+					if (!newContent.trim().isEmpty()) {
+						bp.setContent(newContent.replace("\\n", "\n"));
+					}
+
+					System.out.print("機密情報ですか？ 現在:[" + (bp.getIsSecret() ? "y" : "N") + "] (y/N): ");
+					String newSecret = scan.nextLine();
+					if (!newSecret.trim().isEmpty()) {
+						bp.setIsSecret(newSecret.equals("y"));
+					}
+					System.out.println("-> ファイル (番号 " + choice + ") を更新しました。");
+
+				} else {
+					System.out.println("【ERROR】正しい番号を入力してください。");
+				}
+			} catch (NumberFormatException e) {
+				System.out.println("【ERROR】数字を入力してください。");
+			}
+		}
+	}
+
 	private void collectModifiers(Template template) {
 		if (scan.nextLine().equals("y")) {
 			template.getModifierList().clear();
@@ -296,6 +379,7 @@ public class Menu {
 				template.getModifierList().add(new Modifier(path, targetText, replacementText));
 
 				System.out.print("さらにルールを追加しますか？ (y/N): ");
+				String continueInput = scan.nextLine();
 				if (!scan.nextLine().equals("y")) {
 					break;
 				}
@@ -316,7 +400,7 @@ public class Menu {
 				}
 			}
 
-			System.out.print("操作を選択してください (1〜" + commands.size() + "の番号: 修正, 0: 新規追加, −1: 順番入れ替え, -2: 終了): ");
+			System.out.print("操作を選択 (1〜" + commands.size() + "の番号: 修正, 0: 新規追加, −1: 順番入れ替え, -2: 終了): ");
 			String input = scan.nextLine();
 
 			try {
@@ -324,7 +408,6 @@ public class Menu {
 				if (choice == -2) {
 					break;
 				} else if (choice == 0) {
-					// 新規追加
 					System.out.print("追加するコマンドを入力してください: ");
 					String newCommand = scan.nextLine();
 					if (!newCommand.trim().isEmpty()) {
@@ -333,7 +416,6 @@ public class Menu {
 					}
 
 				} else if (choice == -1) {
-					// 順番入れ替え
 					if (commands.size() < 2) {
 						System.out.println("【ERROR】コマンドが2つ以上ありません。");
 						continue;
@@ -346,7 +428,6 @@ public class Menu {
 					int toIndex = Integer.parseInt(scan.nextLine()) - 1;
 
 					if (fromIndex >= 0 && fromIndex < commands.size() && toIndex >= 0 && toIndex < commands.size()) {
-						// 入れ替え機能
 						String targetCmd = commands.remove(fromIndex);
 						commands.add(toIndex, targetCmd);
 						System.out.println("-> コマンドの順番を入れ替えました。");
@@ -355,7 +436,6 @@ public class Menu {
 					}
 
 				} else if (choice > 0 && choice <= commands.size()) {
-					// 部分修正機能
 					String oldCommand = commands.get(choice - 1);
 					System.out.println("※変更しない場合は何も入力せずにEnter");
 					System.out.print("新しいコマンド [" + oldCommand + "]: ");
@@ -375,7 +455,6 @@ public class Menu {
 		}
 	}
 
-	// Modifierの更新の方
 	private void updateModifiers(Template template) {
 		List<Modifier> modifiers = template.getModifierList();
 
@@ -391,8 +470,7 @@ public class Menu {
 				}
 			}
 
-			// 操作の選択
-			System.out.print("操作を選択してください (1〜" + modifiers.size() + "の番号: 修正, 0: 新規追加, -1: 終了): ");
+			System.out.print("操作を選択 (1〜" + modifiers.size() + "の番号: 修正, 0: 新規追加, -1: 終了): ");
 			String input = scan.nextLine();
 
 			try {
@@ -401,7 +479,6 @@ public class Menu {
 				if (choice == -1) {
 					break;
 				} else if (choice == 0) {
-					// 新規追加
 					System.out.print("対象ファイルのパス: ");
 					String path = scan.nextLine();
 					if (path.trim().isEmpty())
@@ -447,5 +524,49 @@ public class Menu {
 				System.out.println("【ERROR】数字を入力してください。");
 			}
 		}
+	}
+
+	// django用(render)デフォルトテンプレート生成
+	private void createDefaultTemplate(String title) {
+		Template template = new Template(title, "django");
+
+		// セットアップコマンド
+		template.getSetupCommand().add("python3 -m venv venv");
+		template.getSetupCommand().add("venv/bin/pip install --upgrade pip");
+		template.getSetupCommand().add("venv/bin/pip install django gunicorn python-dotenv");
+		template.getSetupCommand().add("venv/bin/django-admin startproject config .");
+		template.getSetupCommand().add("venv/bin/pip freeze > requirements.txt");
+
+		// 独自設定ファイル
+		String gitignore = "venv/\n__pycache__/\n*.pyc\ndb.sqlite3\n.env\n.DS_Store";
+		template.getBlueprintList().add(new Blueprint(".gitignore", gitignore, false));
+
+		String env = "DEBUG=True\nSECRET_KEY=your_secret_key_here";
+		template.getBlueprintList().add(new Blueprint(".env", env, true));
+
+		String renderYaml = "services:\n" +
+				"  - type: web\n" +
+				"    name: django-app\n" +
+				"    env: python\n" +
+				"    buildCommand: \"pip install -r requirements.txt\"\n" +
+				"    startCommand: \"gunicorn config.wsgi\"\n" +
+				"    envVars:\n" +
+				"      - key: PYTHON_VERSION\n" +
+				"        value: 3.10.0";
+		template.getBlueprintList().add(new Blueprint("render.yaml", renderYaml, false));
+
+		// 既存ファイルの書き換えルール
+		template.getModifierList()
+				.add(new Modifier("config/settings.py", "TIME_ZONE = 'UTC'", "TIME_ZONE = 'Asia/Tokyo'"));
+		template.getModifierList()
+				.add(new Modifier("config/settings.py", "LANGUAGE_CODE = 'en-us'", "LANGUAGE_CODE = 'ja'"));
+		template.getModifierList().add(new Modifier("config/settings.py", "STATIC_URL = 'static/'",
+				"STATIC_URL = 'static/'\nSTATICFILES_DIRS = [BASE_DIR / 'static']"));
+		template.getModifierList()
+				.add(new Modifier("config/settings.py", "ALLOWED_HOSTS = []", "ALLOWED_HOSTS = ['*']"));
+
+		// 保存処理
+		templateMana.save(template);
+		System.out.println("-> Django用(render)デフォルトテンプレート「" + title + "」を自動生成し、保存しました");
 	}
 }

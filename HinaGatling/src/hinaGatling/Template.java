@@ -11,7 +11,6 @@ public class Template {
 	private String framework;
 	private List<Blueprint> blueprintList;
 	private List<String> setupCommand;
-	private DeployConfig deployConfig;
 	private List<Modifier> modifierList;
 	private LocalDateTime lastUpdateDate;
 
@@ -69,14 +68,6 @@ public class Template {
 
 	public void setSetupCommand(List<String> setupCommand) {
 		this.setupCommand = setupCommand;
-	}
-
-	public DeployConfig getDeployConfig() {
-		return deployConfig;
-	}
-
-	public void setDeployConfig(DeployConfig deployConfig) {
-		this.deployConfig = deployConfig;
 	}
 
 	public List<Modifier> getModifierList() {
