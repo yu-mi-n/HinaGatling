@@ -73,7 +73,7 @@ public class Menu {
 
 		List<Template> templates = templateMana.loadAll();
 		if (templates.isEmpty()) {
-			System.out.println("登録されているテンプレートがありません。「2: 登録」から作成してください");
+			System.err.println("登録されているテンプレートがありません。「2: 登録」から作成してください");
 			return;
 		}
 
@@ -85,7 +85,7 @@ public class Menu {
 		System.out.print("プロジェクト名（フォルダ名）を入力してください→ ");
 		String projectName = scan.nextLine();
 		if (projectName.trim().isEmpty()) {
-			System.out.println("【Error】プロジェクト名は必須です。処理を中断します。");
+			System.err.println("【Error】プロジェクト名は必須です。処理を中断します。");
 			return;
 		}
 
@@ -94,7 +94,7 @@ public class Menu {
 		String targetPath = scan.nextLine();
 
 		System.out.println("GitHubのリポジトリのURL/SSHを入力してください（例: git@github.com:username/repo.git）");
-		System.out.print("（後で手動設定する場合はそのままEnter）→ ");
+		System.out.print("（後で設定する場合はそのままEnter）→ ");
 		String remoteUrl = scan.nextLine();
 
 		projectBuild.build(selectedTemplate, projectName, targetPath, remoteUrl);
@@ -169,7 +169,7 @@ public class Menu {
 
 		List<Template> templates = templateMana.loadAll();
 		if (templates.isEmpty()) {
-			System.out.println("登録されているテンプレートがありません。「2: 登録」から作成してください");
+			System.err.println("登録されているテンプレートがありません。「2: 登録」から作成してください");
 			return;
 		}
 
@@ -216,7 +216,7 @@ public class Menu {
 
 		List<Template> templates = templateMana.loadAll();
 		if (templates.isEmpty()) {
-			System.out.println("登録されているテンプレートがありません。「2: 登録」から作成してください");
+			System.err.println("登録されているテンプレートがありません。「2: 登録」から作成してください");
 			return;
 		}
 

@@ -5,11 +5,6 @@ import java.util.Scanner;
 
 public class TemplateEdit {
 	public Template selectTemplate(List<Template> templates, Scanner scan) {
-		if (templates.isEmpty()) {
-			System.out.println("登録されているテンプレートがありません。");
-			return null;
-		}
-
 		System.out.println("【利用可能なテンプレート一覧】");
 		for (int i = 0; i < templates.size(); i++) {
 			Template t = templates.get(i);
@@ -74,13 +69,13 @@ public class TemplateEdit {
 		List<Blueprint> blueprints = template.getBlueprintList();
 
 		while (true) {
-			System.out.println("【現在の独自設定ファイル(Blueprint)一覧】");
+			System.out.println("【現在の独自設定ファイル一覧】");
 			if (blueprints.isEmpty()) {
 				System.out.println("（登録されているファイルはありません）");
 			} else {
 				for (int i = 0; i < blueprints.size(); i++) {
-					Blueprint bp = blueprints.get(i);
-					System.out.println((i + 1) + ": " + bp.getPath() + (bp.getIsSecret() ? " [機密]" : ""));
+					Blueprint blueprint = blueprints.get(i);
+					System.out.println((i + 1) + ": " + blueprint.getPath() + (blueprint.getIsSecret() ? " [機密]" : ""));
 				}
 			}
 
@@ -98,7 +93,8 @@ public class TemplateEdit {
 					if (path.trim().isEmpty())
 						continue;
 
-					System.out.print("ファイルの中身 (改行は \\n): ");
+					System.out.println("ファイルの中身");
+					System.out.print("（※改行を入れる場合は \\n と入力してください）: ");
 					String content = scan.nextLine();
 					content = content.replace("\\n", "\n");
 
@@ -109,25 +105,26 @@ public class TemplateEdit {
 					System.out.println("-> ファイルを新規追加しました。");
 
 				} else if (choice > 0 && choice <= blueprints.size()) {
-					Blueprint bp = blueprints.get(choice - 1);
+					Blueprint blueprint = blueprints.get(choice - 1);
 					System.out.println("※変更しない項目は何も入力せずにEnter");
 
-					System.out.print("新しいパス [" + bp.getPath() + "]: ");
+					System.out.print("新しいパス [" + blueprint.getPath() + "]: ");
 					String newPath = scan.nextLine();
 					if (!newPath.trim().isEmpty()) {
-						bp.setPath(newPath);
+						blueprint.setPath(newPath);
 					}
 
-					System.out.print("新しい中身 (改行は \\n): ");
+					System.out.println("新しい中身");
+					System.out.print("（※改行を入れる場合は \\n と入力してください）: ");
 					String newContent = scan.nextLine();
 					if (!newContent.trim().isEmpty()) {
-						bp.setContent(newContent.replace("\\n", "\n"));
+						blueprint.setContent(newContent.replace("\\n", "\n"));
 					}
 
-					System.out.print("機密情報ですか？ 現在:[" + (bp.getIsSecret() ? "y" : "N") + "] (y/N): ");
+					System.out.print("機密情報ですか？ 現在:[" + (blueprint.getIsSecret() ? "y" : "N") + "] (y/N): ");
 					String newSecret = scan.nextLine();
 					if (!newSecret.trim().isEmpty()) {
-						bp.setIsSecret(newSecret.equals("y"));
+						blueprint.setIsSecret(newSecret.equals("y"));
 					}
 					System.out.println("-> ファイル (番号 " + choice + ") を更新しました。");
 
@@ -165,7 +162,6 @@ public class TemplateEdit {
 				template.getModifierList().add(new Modifier(path, targetText, replacementText));
 
 				System.out.print("さらにルールを追加しますか？ (y/N): ");
-				String continueInput = scan.nextLine();
 				if (!scan.nextLine().equals("y")) {
 					break;
 				}
