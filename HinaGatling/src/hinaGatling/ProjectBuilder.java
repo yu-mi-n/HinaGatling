@@ -197,7 +197,7 @@ public class ProjectBuilder {
 		if (isSuccess) {
 			System.out.println("  -> Gitのセットアップが完了しました");
 		} else {
-			System.err.println("【警告】Gitのセットアップに失敗しました。（MacにGitがインストールされていないか、権限エラーの可能性があります）");
+			System.err.println("【Warning】Gitのセットアップに失敗しました。（MacにGitがインストールされていないか、権限エラーの可能性があります）");
 		}
 	}
 
