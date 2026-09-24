@@ -1,6 +1,5 @@
 package hinaGatling;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -12,7 +11,6 @@ public class Template {
 	private List<Blueprint> blueprintList;
 	private List<String> setupCommand;
 	private List<Modifier> modifierList;
-	private LocalDateTime lastUpdateDate;
 
 	// コンストラクタ
 	public Template() {
@@ -26,7 +24,6 @@ public class Template {
 		this.id = UUID.randomUUID().toString();
 		this.title = title;
 		this.framework = framework;
-		this.lastUpdateDate = LocalDateTime.now();
 	}
 
 	// ゲッターセッター
@@ -76,13 +73,5 @@ public class Template {
 
 	public void setModifierList(List<Modifier> modifierList) {
 		this.modifierList = modifierList;
-	}
-
-	public LocalDateTime getLastUpdateDate() {
-		return lastUpdateDate;
-	}
-
-	public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
-		this.lastUpdateDate = lastUpdateDate;
 	}
 }

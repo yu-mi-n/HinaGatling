@@ -17,7 +17,7 @@ public class TemplateManager {
 	public TemplateManager() {
 		this.mapper = new ObjectMapper();
 		this.mapper.registerModule(new JavaTimeModule());
-		this.mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
 	}
 
 	// JSONから全てのテンプレートを読み込み
@@ -68,7 +68,7 @@ public class TemplateManager {
 
 		// JSONへ保存
 		try {
-			mapper.writerWithDefaultPrettyPrinter().writeValue(new File(FILE_PATH), templates);
+			this.mapper.writeValue(new File(FILE_PATH), templates);
 		} catch (IOException e) {
 			System.err.println("データの保存に失敗しました: " + e.getMessage());
 		}
@@ -90,7 +90,7 @@ public class TemplateManager {
 
 		if (isDeleted) {
 			try {
-				mapper.writerWithDefaultPrettyPrinter().writeValue(new File(FILE_PATH), templates);
+				mapper.writeValue(new File(FILE_PATH), templates);
 				System.out.println("削除が完了しました。");
 			} catch (IOException e) {
 				System.err.println("データの保存に失敗しました: " + e.getMessage());
